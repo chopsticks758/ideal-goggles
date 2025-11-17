@@ -1,0 +1,41 @@
+name: Node CI (Windows + n8n)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  node-ci-windows:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install n8n
+        run: npm install -g n8n
+        shell: cmd
+
+      - name: Verify n8n
+        run: n8n --version
+        shell: cmd
+
+      - name: Create output
+        run: |
+          mkdir dist
+          echo Hello from GitHub Actions + n8n on Windows > dist\info.txt
+          n8n --version >> dist\info.txt
+        shell: cmd
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-build-windows-n8n
+          path: dist/
