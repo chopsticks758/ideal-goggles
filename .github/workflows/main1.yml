@@ -1,0 +1,50 @@
+name: Basic CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  basic-checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1) রিপো checkout
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2) Node setup (বড় অপারেশন উদাহরণ)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # 3) simple কমান্ড – সব repo-তেই কাজ করবে
+      - name: Show current directory
+        run: pwd
+
+      - name: List files
+        run: ls -R
+
+      # 4) Example cache (কাজ করবে, even if node_modules নাই)
+      - name: Cache node_modules folder
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json', 'pnpm-lock.yaml', 'yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      # 5) আর্টিফ্যাক্ট upload – যেকোনো ফাইল আপলোড
+      - name: Create dummy build output
+        run: |
+          mkdir -p dist
+          echo "Hello from GitHub Actions" > dist/index.txt
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-dist
+          path: dist/
