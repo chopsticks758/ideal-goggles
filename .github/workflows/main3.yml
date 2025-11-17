@@ -1,0 +1,82 @@
+name: Node CI (Windows + n8n)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  node-ci-windows:
+    runs-on: windows-2022   # Use GitHub-hosted Windows 2022 runner
+    defaults:
+      run:
+        shell: bash   # Use Git Bash for cross-platform command compatibility
+
+    steps:
+      # 1) Checkout repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2) Show Windows version (for debugging)
+      - name: Show Windows version
+        run: systeminfo | head -n 10
+
+      # 3) Setup Node.js with npm cache
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      # 4) Install project dependencies (if package.json exists)
+      - name: Install project dependencies
+        run: |
+          if [ -f package-lock.json ] || [ -f package.json ]; then
+            npm ci
+          else
+            echo "No package.json found, skipping npm ci"
+          fi
+
+      # 5) Install n8n globally and verify
+      - name: Install n8n globally
+        run: |
+          npm install n8n -g
+          n8n --version
+
+      # 6) Run basic n8n help command
+      - name: Run n8n help
+        run: |
+          n8n --help | head -n 20
+
+      # 7) Run project tests if "test" script exists
+      - name: Run project tests (if script exists)
+        run: |
+          if npx --yes json -f package.json -c "this.scripts && this.scripts.test" >/dev/null 2>&1; then
+            npm test
+          else
+            echo "No test script found, skipping tests"
+          fi
+
+      # 8) Build project if "build" script exists
+      - name: Build project (if script exists)
+        run: |
+          if npx --yes json -f package.json -c "this.scripts && this.scripts.build" >/dev/null 2>&1; then
+            npm run build
+          else
+            echo "No build script found, skipping build"
+          fi
+
+      # 9) Create a dummy dist folder and include n8n version info
+      - name: Create dummy build output (if none)
+        run: |
+          mkdir -p dist
+          echo "Hello from GitHub Actions + n8n on Windows" > dist/info.txt
+          n8n --version >> dist/info.txt
+
+      # 10) Upload dist/ as an artifact
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-build-windows-n8n
+          path: dist/
