@@ -1,0 +1,86 @@
+name: Node CI (Windows + n8n)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  node-ci-windows:
+    runs-on: windows-2022
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install project dependencies
+        shell: pwsh
+        run: |
+          if (Test-Path package.json) {
+            npm ci
+          } else {
+            Write-Host "No package.json found"
+          }
+
+      - name: Install n8n as local dependency
+        shell: pwsh
+        run: |
+          npm install n8n --save-dev --no-optional
+          if (Test-Path node_modules\.bin\n8n.cmd) {
+            Write-Host "n8n installed locally"
+          }
+
+      - name: Verify n8n with npx
+        shell: pwsh
+        run: |
+          npx n8n --version
+
+      - name: Run n8n help
+        shell: pwsh
+        run: |
+          npx n8n --help
+
+      - name: Run tests if available
+        shell: pwsh
+        run: |
+          if (Test-Path package.json) {
+            $pkg = Get-Content package.json | ConvertFrom-Json
+            if ($pkg.scripts -and $pkg.scripts.test) {
+              npm test
+            } else {
+              Write-Host "No test script"
+            }
+          }
+
+      - name: Build if available
+        shell: pwsh
+        run: |
+          if (Test-Path package.json) {
+            $pkg = Get-Content package.json | ConvertFrom-Json
+            if ($pkg.scripts -and $pkg.scripts.build) {
+              npm run build
+            } else {
+              Write-Host "No build script"
+            }
+          }
+
+      - name: Create output
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist
+          $info = "n8n version: $(npx n8n --version)"
+          Set-Content -Path dist/info.txt -Value $info
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-windows-n8n
+          path: dist/
+          if-no-files-found: ignore
