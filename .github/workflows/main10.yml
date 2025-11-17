@@ -1,0 +1,306 @@
+name: Ubuntu Security Tools Installation
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  install-security-tools:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Update system
+        run: |
+          sudo apt-get update
+          sudo apt-get upgrade -y
+
+      - name: Install Python and dependencies
+        run: |
+          sudo apt-get install -y python3 python3-pip python3-dev python3-setuptools
+
+      - name: Install network tools
+        run: |
+          sudo apt-get install -y \
+            nmap \
+            netcat \
+            tcpdump \
+            wireshark-common \
+            traceroute \
+            net-tools \
+            dnsutils \
+            whois \
+            curl \
+            wget \
+            arp-scan
+        continue-on-error: true
+
+      - name: Install web security tools
+        run: |
+          sudo apt-get install -y \
+            nikto \
+            dirb \
+            wfuzz \
+            sqlmap \
+            hydra \
+            john \
+            hashcat \
+            aircrack-ng
+        continue-on-error: true
+
+      - name: Install exploitation frameworks
+        run: |
+          sudo apt-get install -y \
+            metasploit-framework \
+            exploitdb \
+            searchsploit
+        continue-on-error: true
+
+      - name: Install reconnaissance tools
+        run: |
+          sudo apt-get install -y \
+            recon-ng \
+            theharvester \
+            maltego \
+            spiderfoot
+        continue-on-error: true
+
+      - name: Install password cracking tools
+        run: |
+          sudo apt-get install -y \
+            hydra \
+            medusa \
+            ncrack \
+            ophcrack \
+            hashcat
+        continue-on-error: true
+
+      - name: Install wireless tools
+        run: |
+          sudo apt-get install -y \
+            aircrack-ng \
+            reaver \
+            wifite \
+            kismet
+        continue-on-error: true
+
+      - name: Install forensics tools
+        run: |
+          sudo apt-get install -y \
+            foremost \
+            binwalk \
+            autopsy \
+            sleuthkit \
+            bulk-extractor
+        continue-on-error: true
+
+      - name: Install additional security tools
+        run: |
+          sudo apt-get install -y \
+            gobuster \
+            ffuf \
+            amass \
+            subfinder \
+            masscan \
+            dnsenum \
+            enum4linux \
+            smbclient \
+            nbtscan \
+            snmp \
+            onesixtyone
+        continue-on-error: true
+
+      - name: Install Git-based tools
+        run: |
+          mkdir -p ~/tools
+          cd ~/tools
+          
+          # Install Sublist3r
+          git clone https://github.com/aboul3la/Sublist3r.git
+          cd Sublist3r && pip3 install -r requirements.txt
+          cd ..
+          
+          # Install theHarvester
+          git clone https://github.com/laramies/theHarvester.git
+          cd theHarvester && pip3 install -r requirements.txt
+          cd ..
+          
+          # Install Sherlock
+          git clone https://github.com/sherlock-project/sherlock.git
+          cd sherlock && pip3 install -r requirements.txt
+          cd ..
+          
+          # Install Photon
+          git clone https://github.com/s0md3v/Photon.git
+          cd Photon && pip3 install -r requirements.txt
+          cd ..
+        continue-on-error: true
+
+      - name: Install Python security packages
+        run: |
+          pip3 install --user \
+            scapy \
+            requests \
+            beautifulsoup4 \
+            selenium \
+            dnspython \
+            paramiko \
+            pycrypto \
+            impacket \
+            pwntools \
+            ROPgadget
+        continue-on-error: true
+
+      - name: Verify installations and create report
+        run: |
+          echo "==================================" > installation_report.txt
+          echo "Security Tools Installation Report" >> installation_report.txt
+          echo "Generated: $(date)" >> installation_report.txt
+          echo "==================================" >> installation_report.txt
+          echo "" >> installation_report.txt
+          
+          # Function to check tool
+          check_tool() {
+            if command -v $1 &> /dev/null; then
+              version=$($1 --version 2>&1 | head -n 1 || echo "installed")
+              echo "✅ $1 - $version" >> installation_report.txt
+              return 0
+            else
+              echo "❌ $1 - NOT FOUND" >> installation_report.txt
+              return 1
+            fi
+          }
+          
+          # Network Tools
+          echo "## Network Tools" >> installation_report.txt
+          check_tool nmap
+          check_tool netcat
+          check_tool tcpdump
+          check_tool traceroute
+          check_tool arp-scan
+          check_tool masscan
+          echo "" >> installation_report.txt
+          
+          # Web Security Tools
+          echo "## Web Security Tools" >> installation_report.txt
+          check_tool nikto
+          check_tool dirb
+          check_tool sqlmap
+          check_tool wfuzz
+          check_tool gobuster
+          check_tool ffuf
+          echo "" >> installation_report.txt
+          
+          # Password Tools
+          echo "## Password Cracking Tools" >> installation_report.txt
+          check_tool hydra
+          check_tool john
+          check_tool hashcat
+          check_tool medusa
+          check_tool ncrack
+          echo "" >> installation_report.txt
+          
+          # Wireless Tools
+          echo "## Wireless Tools" >> installation_report.txt
+          check_tool aircrack-ng
+          check_tool reaver
+          check_tool wifite
+          echo "" >> installation_report.txt
+          
+          # Exploitation Tools
+          echo "## Exploitation Tools" >> installation_report.txt
+          check_tool msfconsole
+          check_tool searchsploit
+          echo "" >> installation_report.txt
+          
+          # Reconnaissance Tools
+          echo "## Reconnaissance Tools" >> installation_report.txt
+          check_tool theharvester
+          check_tool dnsenum
+          check_tool enum4linux
+          check_tool nbtscan
+          check_tool whois
+          echo "" >> installation_report.txt
+          
+          # Forensics Tools
+          echo "## Forensics Tools" >> installation_report.txt
+          check_tool foremost
+          check_tool binwalk
+          check_tool sleuthkit
+          echo "" >> installation_report.txt
+          
+          # Python Tools
+          echo "## Python-based Tools" >> installation_report.txt
+          if [ -d ~/tools/Sublist3r ]; then
+            echo "✅ Sublist3r - installed" >> installation_report.txt
+          else
+            echo "❌ Sublist3r - NOT FOUND" >> installation_report.txt
+          fi
+          
+          if [ -d ~/tools/sherlock ]; then
+            echo "✅ Sherlock - installed" >> installation_report.txt
+          else
+            echo "❌ Sherlock - NOT FOUND" >> installation_report.txt
+          fi
+          
+          if [ -d ~/tools/Photon ]; then
+            echo "✅ Photon - installed" >> installation_report.txt
+          else
+            echo "❌ Photon - NOT FOUND" >> installation_report.txt
+          fi
+          echo "" >> installation_report.txt
+          
+          # Python packages
+          echo "## Python Security Packages" >> installation_report.txt
+          pip3 list | grep -E "(scapy|requests|impacket|pwntools|ROPgadget)" >> installation_report.txt
+          echo "" >> installation_report.txt
+          
+          # Summary
+          total_found=$(grep -c "✅" installation_report.txt)
+          total_missing=$(grep -c "❌" installation_report.txt)
+          echo "==================================" >> installation_report.txt
+          echo "Summary: $total_found tools installed, $total_missing missing" >> installation_report.txt
+          echo "==================================" >> installation_report.txt
+          
+          cat installation_report.txt
+
+      - name: Create detailed tool list
+        run: |
+          echo "# Installed Tools Details" > tools_details.txt
+          echo "" >> tools_details.txt
+          
+          # Get versions for key tools
+          echo "## Tool Versions" >> tools_details.txt
+          nmap --version 2>&1 | head -n 5 >> tools_details.txt || true
+          echo "" >> tools_details.txt
+          sqlmap --version 2>&1 >> tools_details.txt || true
+          echo "" >> tools_details.txt
+          hydra -h 2>&1 | head -n 3 >> tools_details.txt || true
+          echo "" >> tools_details.txt
+          
+          # List all security-related packages
+          echo "## All Security Packages" >> tools_details.txt
+          dpkg -l | grep -E "(nmap|metasploit|aircrack|hydra|john|nikto|sqlmap)" >> tools_details.txt || true
+          
+          cat tools_details.txt
+
+      - name: Upload installation report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-tools-report
+          path: |
+            installation_report.txt
+            tools_details.txt
+          if-no-files-found: warn
+
+      - name: Display summary
+        run: |
+          echo "========================================="
+          echo "Installation Complete!"
+          echo "========================================="
+          echo ""
+          cat installation_report.txt
