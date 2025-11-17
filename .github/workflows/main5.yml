@@ -1,0 +1,65 @@
+name: Node CI (Windows + n8n)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  node-ci-windows:
+    runs-on: windows-2022
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Windows Build Tools
+        shell: pwsh
+        run: |
+          npm install --global --production windows-build-tools
+        continue-on-error: true
+
+      - name: Clear npm cache
+        shell: pwsh
+        run: npm cache clean --force
+
+      - name: Install project dependencies
+        shell: pwsh
+        run: |
+          if (Test-Path package.json) {
+            npm install
+          }
+        continue-on-error: true
+
+      - name: Install n8n globally with extended timeout
+        shell: pwsh
+        run: |
+          npm install -g n8n --timeout=120000
+          
+      - name: Verify n8n installation
+        shell: pwsh
+        run: |
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+          n8n --version
+
+      - name: Create build output
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist
+          $output = "Hello from GitHub Actions + n8n on Windows"
+          Set-Content -Path dist/info.txt -Value $output
+          $version = n8n --version 2>&1 | Out-String
+          Add-Content -Path dist/info.txt -Value $version
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-build-windows-n8n
+          path: dist/
+          if-no-files-found: warn
